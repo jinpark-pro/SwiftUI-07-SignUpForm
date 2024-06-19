@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct UserNameAvailableMessage: Codable {
     var isAvailable: Bool
@@ -20,6 +21,25 @@ enum NetworkError: Error {
     case encodingError(Error)
 }
 class AuthenticationService {
+    func checkUserNameAvailableNaive(userName: String) -> AnyPublisher<Bool, Never> {
+        guard let url = URL(string: "http:/127.0.0.1:8080/isUserNameAvailable?userName=\(userName)") else {
+            return Just(false).eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: url)
+            .map { data, response in
+                do {
+                    let decoder = JSONDecoder()
+                    let userAvailableMessage = try decoder.decode(UserNameAvailableMessage.self, from: data)
+                    return userAvailableMessage.isAvailable
+                } catch {
+                    return false
+                }
+            }
+            // 오류가 날때 false 를 리턴, 나중에 오류 처리도 배움
+            .replaceError(with: false)
+            .eraseToAnyPublisher()
+    }
     func checkUserNameAvailableWithClosure(userName: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
         let url = URL(string: "http:/127.0.0.1:8080/isUserNameAvailable?userName=\(userName)")!
         let task = URLSession.shared.dataTask(with: url) { data, response, error in

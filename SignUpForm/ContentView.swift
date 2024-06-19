@@ -17,8 +17,6 @@ class SignUpFormViewModel: ObservableObject {
     @Published var passwordMessage: String = ""
     @Published var isValid: Bool = false
     
-    @Published var isUserNameAvailable: Bool = false
-    
     private let authenticationService = AuthenticationService()
     
     private var cancellables: Set<AnyCancellable> = []
@@ -44,37 +42,31 @@ class SignUpFormViewModel: ObservableObject {
     }()
     
     private lazy var isFormValidPublisher: AnyPublisher<Bool, Never> = {
-        Publishers.CombineLatest3(isUsernameLengthValidPublisher, $isUserNameAvailable, isPasswordValidPublisher)
+        Publishers.CombineLatest3(isUsernameLengthValidPublisher, isUsernameAvailablePublisher, isPasswordValidPublisher)
             .map { $0 && $1 && $2 }
             .eraseToAnyPublisher()
     }()
     
-    func checkUserNameAvailable(_ userName: String) {
-        authenticationService.checkUserNameAvailableWithClosure(userName: userName) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let isAvailable):
-                    self?.isUserNameAvailable = isAvailable
-                case .failure(let error):
-                    print("error: \(error)")
-                    self?.isUserNameAvailable = false
-                }
+    private lazy var isUsernameAvailablePublisher: AnyPublisher<Bool, Never> = {
+        $username
+            .debounce(for: 0.5, scheduler: RunLoop.main)
+            .removeDuplicates()
+            // 중첩 배열을 단일 배열로
+            // Combine 에서는 개시자를 Publisher 개체로 변경
+            .flatMap { username -> AnyPublisher<Bool, Never> in
+                self.authenticationService.checkUserNameAvailableNaive(userName: username)
             }
-        }
-    }
+            .receive(on: DispatchQueue.main)
+            .share()
+            .print("share")
+            .eraseToAnyPublisher()
+    }()
     
     init() {
-        // username 이 바뀌어도 기다렸다가 0.5초에 한번 요청하도록 debounce 사용
-        $username
-            .debounce(for: 0.5, scheduler: DispatchQueue.main)
-            .sink { [weak self] userName in
-                self?.checkUserNameAvailable(userName)
-            }
-            .store(in: &cancellables)
         
         isFormValidPublisher.assign(to: &$isValid)
         
-        Publishers.CombineLatest(isUsernameLengthValidPublisher, $isUserNameAvailable)
+        Publishers.CombineLatest(isUsernameLengthValidPublisher, isUsernameAvailablePublisher)
             .map { isUsernameLengthValid, isUserNameAvailable in
                 if !isUsernameLengthValid {
                     return "Username must be at leat three characters!"
@@ -83,7 +75,6 @@ class SignUpFormViewModel: ObservableObject {
                 }
                 return ""
             }
-//        isUsernameLengthValidPublisher.map { $0 ? "" : "Username must be at least three characters!"}
             .assign(to: &$usernameMessage)
         
         Publishers.CombineLatest(isPasswordEmptyPublisher, isPasswordMatchingPublisher)
