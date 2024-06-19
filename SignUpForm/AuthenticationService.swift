@@ -13,6 +13,9 @@ struct UserNameAvailableMessage: Codable {
     var userName: String
 }
 
+enum APIError: LocalizedError {
+    case invalidRequestError(String)
+}
 enum NetworkError: Error {
     case transportError(Error)
     case serverError(statusCode: Int)
@@ -21,17 +24,15 @@ enum NetworkError: Error {
     case encodingError(Error)
 }
 class AuthenticationService {
-    func checkUserNameAvailable(userName: String) -> AnyPublisher<Bool, Never> {
+    func checkUserNameAvailable(userName: String) -> AnyPublisher<Bool, Error> {
         guard let url = URL(string: "http:/127.0.0.1:8080/isUserNameAvailable?userName=\(userName)") else {
-            return Just(false).eraseToAnyPublisher()
+            return Fail(error: APIError.invalidRequestError("URL invalid")).eraseToAnyPublisher()
         }
         
         return URLSession.shared.dataTaskPublisher(for: url)
             .map(\.data)
             .decode(type: UserNameAvailableMessage.self, decoder: JSONDecoder())
             .map(\.isAvailable)
-            // 오류가 날때 false 를 리턴, 나중에 오류 처리도 배움
-            .replaceError(with: false)
             .eraseToAnyPublisher()
     }
     func checkUserNameAvailableWithClosure(userName: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {

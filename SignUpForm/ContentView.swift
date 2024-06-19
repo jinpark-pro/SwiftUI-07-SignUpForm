@@ -55,6 +55,10 @@ class SignUpFormViewModel: ObservableObject {
             // Combine 에서는 개시자를 Publisher 개체로 변경
             .flatMap { username -> AnyPublisher<Bool, Never> in
                 self.authenticationService.checkUserNameAvailable(userName: username)
+                    .catch { error in
+                        return Just(false)
+                    }
+                    .eraseToAnyPublisher()
             }
             .receive(on: DispatchQueue.main)
             .share()
