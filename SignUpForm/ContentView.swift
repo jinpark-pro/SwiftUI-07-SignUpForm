@@ -44,8 +44,8 @@ class SignUpFormViewModel: ObservableObject {
     }()
     
     private lazy var isFormValidPublisher: AnyPublisher<Bool, Never> = {
-        Publishers.CombineLatest(isUsernameLengthValidPublisher, isPasswordValidPublisher)
-            .map { $0 && $1 }
+        Publishers.CombineLatest3(isUsernameLengthValidPublisher, $isUserNameAvailable, isPasswordValidPublisher)
+            .map { $0 && $1 && $2 }
             .eraseToAnyPublisher()
     }()
     
@@ -73,7 +73,17 @@ class SignUpFormViewModel: ObservableObject {
             .store(in: &cancellables)
         
         isFormValidPublisher.assign(to: &$isValid)
-        isUsernameLengthValidPublisher.map { $0 ? "" : "Username must be at least three characters!"}
+        
+        Publishers.CombineLatest(isUsernameLengthValidPublisher, $isUserNameAvailable)
+            .map { isUsernameLengthValid, isUserNameAvailable in
+                if !isUsernameLengthValid {
+                    return "Username must be at leat three characters!"
+                } else if !isUserNameAvailable {
+                    return "This username is already taken."
+                }
+                return ""
+            }
+//        isUsernameLengthValidPublisher.map { $0 ? "" : "Username must be at least three characters!"}
             .assign(to: &$usernameMessage)
         
         Publishers.CombineLatest(isPasswordEmptyPublisher, isPasswordMatchingPublisher)
@@ -95,7 +105,7 @@ struct ContentView: View {
             // Username
             Section {
                 TextField("Username", text: $viewModel.username)
-                    .textInputAutocapitalization(.none)
+                    .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             } footer: {
                 Text(viewModel.usernameMessage)
