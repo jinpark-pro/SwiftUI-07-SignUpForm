@@ -11,6 +11,7 @@
 		3C586B662C21697C008DA11D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C586B652C21697C008DA11D /* ContentView.swift */; };
 		3C586B682C21697E008DA11D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C586B672C21697E008DA11D /* Assets.xcassets */; };
 		3C586B6B2C21697E008DA11D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C586B6A2C21697E008DA11D /* Preview Assets.xcassets */; };
+		3C586B722C225DCD008DA11D /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C586B712C225DCD008DA11D /* AuthenticationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +20,7 @@
 		3C586B652C21697C008DA11D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3C586B672C21697E008DA11D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3C586B6A2C21697E008DA11D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		3C586B712C225DCD008DA11D /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +55,7 @@
 			children = (
 				3C586B632C21697C008DA11D /* SignUpFormApp.swift */,
 				3C586B652C21697C008DA11D /* ContentView.swift */,
+				3C586B712C225DCD008DA11D /* AuthenticationService.swift */,
 				3C586B672C21697E008DA11D /* Assets.xcassets */,
 				3C586B692C21697E008DA11D /* Preview Content */,
 			);
@@ -137,6 +140,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C586B722C225DCD008DA11D /* AuthenticationService.swift in Sources */,
 				3C586B662C21697C008DA11D /* ContentView.swift in Sources */,
 				3C586B642C21697C008DA11D /* SignUpFormApp.swift in Sources */,
 			);
