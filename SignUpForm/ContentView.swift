@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 class SignUpFormViewModel: ObservableObject {
     @Published var username: String = ""
@@ -16,12 +17,47 @@ class SignUpFormViewModel: ObservableObject {
     @Published var passwordMessage: String = ""
     @Published var isValid: Bool = false
     
+    private lazy var isUsernameLengthValidPublisher: AnyPublisher<Bool, Never> = {
+        $username.map { $0.count >= 3 }.eraseToAnyPublisher()
+    }()
+    
+    private lazy var isPasswordEmptyPublisher: AnyPublisher<Bool, Never> = {
+        $password.map(\.isEmpty).eraseToAnyPublisher()
+    }()
+    
+    private lazy var isPasswordMatchingPublisher: AnyPublisher<Bool, Never> = {
+        Publishers.CombineLatest($password, $passwordConfirmation)
+            .map(==)
+            .eraseToAnyPublisher()
+    }()
+    
+    private lazy var isPasswordValidPublisher: AnyPublisher<Bool, Never> = {
+        Publishers.CombineLatest(isPasswordEmptyPublisher, isPasswordMatchingPublisher)
+            .map { !$0 && $1}
+            .eraseToAnyPublisher()
+    }()
+    
+    private lazy var isFormValidPublisher: AnyPublisher<Bool, Never> = {
+        Publishers.CombineLatest(isUsernameLengthValidPublisher, isPasswordValidPublisher)
+            .map { $0 && $1 }
+            .eraseToAnyPublisher()
+    }()
+    
     init() {
-        // 작업지시서이니까 실제 데이터가 들어오기전에 선언해도 됨
-        $username.map { $0.count >= 3 }
-            .assign(to: &$isValid)
-        $username.map { $0.count >= 3 ? "" : "Username must be at least three characters"}
+        isFormValidPublisher.assign(to: &$isValid)
+        isUsernameLengthValidPublisher.map { $0 ? "" : "Username must be at least three characters!"}
             .assign(to: &$usernameMessage)
+        
+        Publishers.CombineLatest(isPasswordEmptyPublisher, isPasswordMatchingPublisher)
+            .map { isPasswordEmtpy, isPasswordMatching in
+                if isPasswordEmtpy {
+                    return "Password must not be empty"
+                } else if !isPasswordMatching {
+                    return "Passwords do not match"
+                }
+                return ""
+            }
+            .assign(to: &$passwordMessage)
     }
 }
 struct ContentView: View {
