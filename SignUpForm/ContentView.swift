@@ -54,7 +54,7 @@ class SignUpFormViewModel: ObservableObject {
             // 중첩 배열을 단일 배열로
             // Combine 에서는 개시자를 Publisher 개체로 변경
             .flatMap { username -> AnyPublisher<Bool, Never> in
-                self.authenticationService.checkUserNameAvailableNaive(userName: username)
+                self.authenticationService.checkUserNameAvailable(userName: username)
             }
             .receive(on: DispatchQueue.main)
             .share()
