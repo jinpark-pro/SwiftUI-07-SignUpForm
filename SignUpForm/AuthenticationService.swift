@@ -13,15 +13,25 @@ struct UserNameAvailableMessage: Codable {
     var userName: String
 }
 
-enum APIError: LocalizedError {
-    case invalidRequestError(String)
-}
 enum NetworkError: Error {
     case transportError(Error)
     case serverError(statusCode: Int)
     case noData
     case decodingError(Error)
     case encodingError(Error)
+}
+
+struct APIErrorMessage: Decodable {
+    var error: Bool
+    var reason: String
+}
+
+enum APIError: LocalizedError {
+    case invalidRequestError(String)
+    case transportError(Error)
+    case invalidResponse
+    case validationError(String)
+    case decodingError(String)
 }
 class AuthenticationService {
     func checkUserNameAvailable(userName: String) -> AnyPublisher<Bool, Error> {
@@ -30,6 +40,27 @@ class AuthenticationService {
         }
         
         return URLSession.shared.dataTaskPublisher(for: url)
+            .mapError { error -> Error in
+                return APIError.transportError(error)
+            }
+            .tryMap { (data, response) -> (data: Data, response: URLResponse) in
+                print("Received resonse from server, now checking status code")
+                guard let urlResponse = response as? HTTPURLResponse else {
+                    throw APIError.invalidResponse
+                }
+                if (200..<300) ~= urlResponse.statusCode {} else {
+                    let decoder = JSONDecoder()
+                    let apiError = try decoder.decode(APIErrorMessage.self, from: data)
+                    if urlResponse.statusCode == 400 {
+                        throw APIError.validationError(apiError.reason)
+                    }
+                    if (500..<600) ~= urlResponse.statusCode {
+                        let retryAfter = urlResponse.value(forHTTPHeaderField: "Retry-After")
+                        // TODO: Server error handling
+                    }
+                }
+                return (data, response)
+            }
             .map(\.data)
             .decode(type: UserNameAvailableMessage.self, decoder: JSONDecoder())
             .map(\.isAvailable)

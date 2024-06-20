@@ -94,6 +94,9 @@ class SignUpFormViewModel: ObservableObject {
                     return "Username must be at least three characters!"
                 // .failure 는 서버연결이 실패한 경우
                 case (_, .failure(let error)):
+                    if case APIError.transportError(_) = error {
+                        return "Check your internet connection."
+                    }
                     return "Error checking username availability: \(error.localizedDescription)"
                 // .success 는 서버연결은 성공한 상태. () 안의 true 와 false 로 조건을 만족했는지 확인
                 case (_, .success(false)):
